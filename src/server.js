@@ -1,8 +1,9 @@
 import http from 'node:http';
 import { json } from './middlewares/json.js';
+import { Database } from './database.js';
+import { randomUUID } from 'node:crypto';
 
-const users = [];
-var userId = 0;
+const database = new Database();
 
 const server = http.createServer(async(request, response) => {
     const {method, url} = request;
@@ -10,18 +11,19 @@ const server = http.createServer(async(request, response) => {
     if(method === 'GET' && url === '/users'){
         return response
             .writeHead(200)
-            .end(JSON.stringify([...users]));
+            .end(JSON.stringify([...database.select('users')]));
     }
     if(method === 'POST' && url === '/users'){
         const {name, email} = request.body;
-        users.push({
-            id: ++userId,
+        const user = {
+            id: randomUUID(),
             name,
             email
-        });
+        };
+        let savedUser = database.insert('users', user);
         return response
             .writeHead(201)
-            .end();
+            .end(JSON.stringify(savedUser));
     }
     return response
         .writeHead(404)
